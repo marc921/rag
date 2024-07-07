@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: marcbrunlearning/api:latest
+        ports:
+        - containerPort: {{ .Values.api.port }}
+        env:
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-password
+                key: password
+          - name: DATABASE_URL
+            value: "postgresql://postgres:{{ .Values.postgres.password }}@postgres-service:{{ .Values.postgres.port }}/postgres?sslmode=disable"
+          - name: MODEL_URL
+            value: "{{ .Values.scaleway.model_url }}"
+          - name: SCALEWAY_SECRET_KEY
+            value: "{{ .Values.scaleway.secret_key }}"
+          - name: AUTH_SECRET
+            value: "{{ .Values.api.auth_secret }}"
+      imagePullSecrets:
+        - name: docker-cred
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-loadbalancer
+spec:
+  selector:
+    app: api
+  ports:
+    - protocol: TCP
+      port: 80          # Port exposed by the service internally within the cluster
+      targetPort: {{ .Values.api.port }}  # Port exposed by the container, on which the service will send traffic to
+      nodePort: 30000   # Port exposed externally by the node
+  type: LoadBalancer

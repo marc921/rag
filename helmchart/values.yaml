@@ -1,0 +1,9 @@
+api:
+  port: 8080
+  auth_secret: change_me
+postgres:
+  port: 5432
+  password: change_me
+scaleway:
+  model_url: change_me
+  secret_key: change_me
